@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Proximity Alarm</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #controls {
+            padding: 15px;
+            background: #f8f9fa;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        #map {
+            flex-grow: 1;
+            width: 100%;
+        }
+        .status {
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .active { color: green; }
+        .alarm-triggered { color: red; font-size: 1.2em; animation: blink 1s infinite; }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled { background-color: #ccc; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <h2>📍 GPS Proximity Alarm</h2>
+        <p>1. Click anywhere on the map to set your target destination.<br>
+           2. Adjust the radius and click "Start Tracking".</p>
+        
+        <label for="radius">Alarm Radius (meters): </label>
+        <input type="number" id="radius" value="100" min="10" step="10" style="width: 70px;">
+        
+        <button id="trackBtn" disabled>Start Tracking</button>
+        <button id="stopBtn" style="background-color: #dc3545; display: none;">Stop Alarm</button>
+        
+        <div id="statusUpdate" class="status">Status: Waiting for target location...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let userMarker, targetMarker, fenceCircle;
+        let targetLatLng = null;
+        let watchId = null;
+        let audioCtx = null;
+        let alarmInterval = null;
+
+        // Initialize the Map (Defaults to a global view, updates to user location if permitted)
+        map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Try to center map on user's current initial location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const initCoords = [position.coords.latitude, position.coords.longitude];
+                map.setView(initCoords, 15);
+                userMarker = L.marker(initCoords, {title: "You are here"}).addTo(map)
+                    .bindPopup("You are here").openPopup();
+            });
+        }
+
+        // Map Click Event: Set Destination
+        map.on('click', function(e) {
+            targetLatLng = e.latlng;
+            const radius = parseInt(document.getElementById('radius').value) || 100;
+
+            // Remove existing target markers/circles if any
+            if (targetMarker) map.removeLayer(targetMarker);
+            if (fenceCircle) map.removeLayer(fenceCircle);
+
+            // Add new Destination Marker and Geofence Visual
+            targetMarker = L.marker(targetLatLng, {draggable: false}).addTo(map)
+                .bindPopup("Target Destination").openPopup();
+            
+            fenceCircle = L.circle(targetLatLng, {
+                color: 'red',
+                fillColor: '#f03',
+                fillOpacity: 0.2,
+                radius: radius
+            }).addTo(map);
+
+            document.getElementById('trackBtn').disabled = false;
+            document.getElementById('statusUpdate').innerHTML = "Status: Target set. Ready to track.";
+            document.getElementById('statusUpdate').className = "status active";
+        });
+
+        // Update Geofence visual dynamically if radius changes
+        document.getElementById('radius').addEventListener('input', function() {
+            if (fenceCircle) {
+                fenceCircle.setRadius(parseInt(this.value) || 100);
+            }
+        });
+
+        // Start Tracking Button
+        document.getElementById('trackBtn').addEventListener('click', function() {
+            if (!targetLatLng) return;
+
+            // Initialize Web Audio on user gesture (Browser requirement)
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            document.getElementById('statusUpdate').innerHTML = "Status: Tracking active. Monitoring distance...";
+            this.disabled = true;
+
+            // Start continuous high-accuracy GPS tracking
+            watchId = navigator.geolocation.watchPosition(checkProximity, handleGeoError, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 10000
+            });
+        });
+
+        // Stop Alarm Button
+        document.getElementById('stopBtn').addEventListener('click', stopAlarm);
+
+        // Success Callback for Geolocation Watch
+        function checkProximity(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const userLatLng = L.latLng(userLat, userLng);
+
+            // Update user marker position on map
+            if (userMarker) {
+                userMarker.setLatLng(userLatLng);
+            } else {
+                userMarker = L.marker(userLatLng).addTo(map);
+            }
+
+            // Calculate distance between user and target in meters
+            const distance = userLatLng.distanceTo(targetLatLng);
+            const allowedRadius = parseInt(document.getElementById('radius').value) || 100;
+
+            if (distance <= allowedRadius) {
+                triggerAlarm(distance);
+            } else {
+                document.getElementById('statusUpdate').innerHTML = `Status: Tracking... Distance to target: ${Math.round(distance)}m`;
+            }
+        }
+
+        // Trigger Audio Alarm
+        function triggerAlarm(distance) {
+            document.getElementById('statusUpdate').innerHTML = `🚨 ALARM! You are within ${Math.round(distance)}m of the target!`;
+            document.getElementById('statusUpdate').className = "status alarm-triggered";
+            document.getElementById('stopBtn').style.display = "inline-block";
+
+            // Start playing synthesized alarm sound if not already ringing
+            if (!alarmInterval) {
+                alarmInterval = setInterval(() => {
+                    playBeep(880, 0.15); // High pitch beep
+                    setTimeout(() => playBeep(660, 0.15), 200); // Dual tone effect
+                }, 800);
+            }
+        }
+
+        // Helper to synthesize a beep sound using Web Audio API
+        function playBeep(frequency, duration) {
+            if (!audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            
+            osc.type = "sine";
+            osc.frequency.value = frequency;
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Stop tracking and turn off sound
+        function stopAlarm() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            if (alarmInterval) {
+                clearInterval(alarmInterval);
+                alarmInterval = null;
+            }
+            document.getElementById('stopBtn').style.display = "none";
+            document.getElementById('trackBtn').disabled = false;
+            document.getElementById('statusUpdate').innerHTML = "Status: Tracking stopped.";
+            document.getElementById('statusUpdate').className = "status";
+        }
+
+        function handleGeoError(err) {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            alert("Error retrieving GPS data. Ensure location permissions are granted.");
+            stopAlarm();
+        }
+    </script>
+</body>
+</html>
