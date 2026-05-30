@@ -1,0 +1,63 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      📍 GPS Proximity Alarm
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">📍 GPS Proximity Alarm</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="controls-section">
+    <p class="instructions">
+      1. Click anywhere on the map to set your target destination.<br>
+      2. Adjust the radius and click "Start Tracking".
+    </p>
+
+    <ion-item>
+      <ion-label>Alarm Radius (meters):</ion-label>
+      <ion-input
+        type="number"
+        [(ngModel)]="alarmRadius"
+        (ionChange)="onRadiusChange(alarmRadius)"
+        min="10"
+        step="10"
+      ></ion-input>
+    </ion-item>
+
+    <div class="button-group">
+      <ion-button
+        expand="block"
+        color="primary"
+        [disabled]="!targetLatLng || isTracking"
+        (click)="startTracking()"
+      >
+        Start Tracking
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        color="danger"
+        *ngIf="isAlarmTriggered"
+        (click)="stopAlarm()"
+      >
+        Stop Alarm
+      </ion-button>
+    </div>
+
+    <div [ngClass]="'status ' + statusClass">
+      {{ statusMessage }}
+    </div>
+
+    <div *ngIf="isTracking" class="distance-info">
+      <p>Distance to target: <strong>{{ distance | number: '1.0-0' }}m</strong></p>
+    </div>
+  </div>
+
+  <div id="map" class="map-container"></div>
+</ion-content>
