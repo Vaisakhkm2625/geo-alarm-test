@@ -1,0 +1,133 @@
+.map-container {
+  width: 100%;
+  height: 100%;
+  flex-grow: 1;
+}
+
+.controls-section {
+  padding: 15px;
+  background: #f8f9fa;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.instructions {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+ion-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  margin-bottom: 15px;
+}
+
+ion-input {
+  max-width: 100px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.button-group ion-button {
+  flex: 1;
+}
+
+.status {
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.status.active {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.status.alarm-triggered {
+  color: white;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  font-size: 1.1em;
+  animation: blink 1s infinite;
+}
+
+.status.error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.distance-info {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #e7f3ff;
+  border-left: 4px solid #2196f3;
+  border-radius: 2px;
+}
+
+.distance-info p {
+  margin: 0;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Ensure map fills available space */
+ion-content {
+  display: flex;
+  flex-direction: column;
+}
+
+#map {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+/* Leaflet overrides */
+::ng-deep .leaflet-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  outline: 0;
+}
+
+::ng-deep .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 576px) {
+  .controls-section {
+    padding: 12px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .instructions {
+    font-size: 0.85rem;
+  }
+}
