@@ -1,0 +1,50 @@
+{
+  "name": "geo-alarm",
+  "version": "1.0.0",
+  "description": "GPS Proximity Alarm App with Ionic and Capacitor",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "ionic:build": "ionic build",
+    "ionic:serve": "ionic serve",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "cap:build:ios": "cap build ios",
+    "cap:build:android": "cap build android"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^17.0.0",
+    "@angular/common": "^17.0.0",
+    "@angular/compiler": "^17.0.0",
+    "@angular/core": "^17.0.0",
+    "@angular/forms": "^17.0.0",
+    "@angular/platform-browser": "^17.0.0",
+    "@angular/platform-browser-dynamic": "^17.0.0",
+    "@angular/router": "^17.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@ionic/angular": "^7.0.0",
+    "leaflet": "^1.9.4",
+    "rxjs": "~7.8.0",
+    "tslib": "2.3.0",
+    "zone.js": "~0.14.2"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.0.0",
+    "@angular/cli": "~17.0.0",
+    "@angular/compiler-cli": "^17.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@types/leaflet": "^1.9.0",
+    "@types/node": "^20.0.0",
+    "typescript": "~5.2.2",
+    "ionic": "^7.0.0"
+  }
+}
